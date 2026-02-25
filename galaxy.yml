@@ -7,7 +7,6 @@ authors:
 description: Shared infrastructure roles for homelab services
 license:
   - MIT
-license_file: LICENSE
 tags:
   - synology
   - tailscale
