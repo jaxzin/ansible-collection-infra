@@ -1,0 +1,23 @@
+namespace: jaxzin
+name: infra
+version: 1.0.0
+readme: README.md
+authors:
+  - Brian R. Jackson <brian@jaxzin.com>
+description: Shared infrastructure roles for homelab services
+license:
+  - MIT
+license_file: LICENSE
+tags:
+  - synology
+  - tailscale
+  - homelab
+  - sidecar
+dependencies: {}
+repository: https://github.com/jaxzin/ansible-collection-infra
+documentation: https://github.com/jaxzin/ansible-collection-infra
+homepage: https://github.com/jaxzin/ansible-collection-infra
+issues: https://github.com/jaxzin/ansible-collection-infra/issues
+build_ignore:
+  - '*.tar.gz'
+  - .gitignore

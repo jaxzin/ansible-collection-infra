@@ -1,0 +1,95 @@
+galaxy_info:
+  role_name: tailscale_sidecar
+  author: Brian R. Jackson
+  description: Deploy a Tailscale sidecar container with optional Tailscale Serve reverse proxy
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+
+argument_specs:
+  main:
+    short_description: Deploy a Tailscale sidecar container
+    options:
+      tailscale_container_name:
+        type: str
+        required: true
+        description: Name of the Tailscale sidecar Docker container
+
+      tailscale_image:
+        type: str
+        default: "ghcr.io/tailscale/tailscale:latest"
+        description: Tailscale container image
+
+      tailscale_hostname:
+        type: str
+        required: true
+        description: Tailscale hostname for this node on the tailnet
+
+      tailscale_authkey:
+        type: str
+        required: true
+        description: Tailscale auth key (from TS_AUTHKEY env var)
+
+      tailscale_state_dir:
+        type: str
+        required: true
+        description: Host path for Tailscale persistent state
+
+      tailscale_network_name:
+        type: str
+        required: true
+        description: Docker network to attach the sidecar to
+
+      tailscale_serve_enabled:
+        type: bool
+        default: false
+        description: Whether to enable Tailscale Serve (HTTPS reverse proxy)
+
+      tailscale_serve_config_src:
+        type: str
+        default: "ts-serve.json.j2"
+        description: Jinja2 template for the Serve config (relative to role templates/)
+
+      tailscale_serve_config_dir:
+        type: str
+        default: ""
+        description: Host path for the rendered Serve config (required when serve_enabled=true)
+
+      tailscale_serve_domain:
+        type: str
+        default: ""
+        description: >-
+          The FQDN for Tailscale Serve (e.g., myapp.example.ts.net).
+          Required when serve_enabled=true.
+
+      tailscale_serve_proxy_host:
+        type: str
+        default: "127.0.0.1"
+        description: >-
+          Host/IP the Serve proxy target points to.
+          Use 127.0.0.1 when the app shares the sidecar network namespace (network_mode: container:).
+          Use a Docker DNS name (e.g., myapp-server) when containers are on the same Docker network.
+
+      tailscale_serve_proxy_port:
+        type: str
+        default: ""
+        description: Port for the Serve proxy target. Required when serve_enabled=true.
+
+      tailscale_host_ports:
+        type: list
+        elements: str
+        default: []
+        description: >-
+          Host port mappings for the sidecar container (e.g., ["127.0.0.1:8080:8080"]).
+          Only needed if you want localhost access to the proxied service.
+
+      tailscale_extra_args:
+        type: str
+        default: ""
+        description: Extra arguments passed to tailscaled via TS_EXTRA_ARGS

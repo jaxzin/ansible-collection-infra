@@ -1,0 +1,10 @@
+---
+tailscale_image: "ghcr.io/tailscale/tailscale:latest"
+tailscale_serve_enabled: false
+tailscale_serve_config_src: "ts-serve.json.j2"
+tailscale_serve_config_dir: ""
+tailscale_serve_domain: ""
+tailscale_serve_proxy_host: "127.0.0.1"
+tailscale_serve_proxy_port: ""
+tailscale_host_ports: []
+tailscale_extra_args: ""
