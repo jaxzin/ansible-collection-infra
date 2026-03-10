@@ -8,3 +8,7 @@ tailscale_serve_proxy_host: "127.0.0.1"
 tailscale_serve_proxy_port: ""
 tailscale_host_ports: []
 tailscale_extra_args: ""
+
+# Container resource limits
+tailscale_memory_limit: "96m"
+tailscale_memory_swap: "192m"

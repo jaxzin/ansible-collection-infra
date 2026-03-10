@@ -28,6 +28,8 @@
     networks:
       - name: "{{ tailscale_network_name }}"
     ports: "{{ tailscale_host_ports }}"
+    memory: "{{ tailscale_memory_limit }}"
+    memory_swap: "{{ tailscale_memory_swap }}"
     capabilities:
       - NET_ADMIN
       - SYS_MODULE
