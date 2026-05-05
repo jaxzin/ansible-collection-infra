@@ -31,6 +31,12 @@ See `defaults/main.yml` for defaults and `meta/main.yml` for full argument specs
 | `tailscale_serve_proxy_host` | `127.0.0.1` | Backend host to proxy to |
 | `tailscale_serve_proxy_port` | `""` | Backend port to proxy to |
 
+### DNS
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `tailscale_accept_dns` | `true` | Whether tailscaled takes over `/etc/resolv.conf`. Set to `false` when the sidecar lives on a Docker bridge network and `tailscale_serve_proxy_host` is a Docker DNS name (e.g., `myapp-server`); otherwise tailscaled rewrites resolv.conf to point only at MagicDNS (`100.100.100.100`), which can't resolve Docker peer names. |
+
 ## Example Playbook
 
 ```yaml
