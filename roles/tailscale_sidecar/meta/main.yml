@@ -93,3 +93,16 @@ argument_specs:
         type: str
         default: ""
         description: Extra arguments passed to tailscaled via TS_EXTRA_ARGS
+
+      tailscale_accept_dns:
+        type: bool
+        default: true
+        description: >-
+          Whether tailscaled inside the sidecar takes over /etc/resolv.conf
+          (TS_ACCEPT_DNS). Set to false when the sidecar is on a Docker bridge
+          network and must resolve other containers by name via Docker's
+          embedded DNS at 127.0.0.11 — for example, when
+          tailscale_serve_proxy_host is a Docker DNS name like `myapp-server`.
+          With true (the default), tailscaled rewrites /etc/resolv.conf to
+          point only at 100.100.100.100 (MagicDNS), making Docker DNS
+          unreachable from inside the sidecar.

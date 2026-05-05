@@ -9,6 +9,15 @@ tailscale_serve_proxy_port: ""
 tailscale_host_ports: []
 tailscale_extra_args: ""
 
+# Whether tailscaled inside the sidecar should take over /etc/resolv.conf.
+# Set to false when the sidecar lives on a Docker bridge network and must
+# resolve other containers by name via Docker's embedded DNS at 127.0.0.11
+# (e.g., when tailscale_serve_proxy_host is a Docker DNS name like
+# `myapp-server`). With true (the default, preserving prior behavior),
+# tailscaled rewrites /etc/resolv.conf to point only at 100.100.100.100,
+# which makes Docker DNS unreachable from inside the sidecar.
+tailscale_accept_dns: true
+
 # Container resource limits
 tailscale_memory_limit: "96m"
 tailscale_memory_swap: "192m"
