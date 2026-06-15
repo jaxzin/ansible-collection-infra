@@ -1,0 +1,5 @@
+# ansible-lint / ansible-galaxy install cache
+.ansible/
+
+# Collection build artifacts
+*.tar.gz

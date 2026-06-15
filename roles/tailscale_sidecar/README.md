@@ -37,6 +37,13 @@ See `defaults/main.yml` for defaults and `meta/main.yml` for full argument specs
 |----------|---------|-------------|
 | `tailscale_accept_dns` | `true` | Whether tailscaled takes over `/etc/resolv.conf`. Set to `false` when the sidecar lives on a Docker bridge network and `tailscale_serve_proxy_host` is a Docker DNS name (e.g., `myapp-server`); otherwise tailscaled rewrites resolv.conf to point only at MagicDNS (`100.100.100.100`), which can't resolve Docker peer names. |
 
+### Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `tailscale_log_driver` | `json-file` | Docker logging driver for the sidecar. Defaults to `json-file` (local-file logging) so the container never lands on the Synology ContainerManager `db` driver, which wedges and breaks healthchecks + restarts. |
+| `tailscale_log_options` | `{max-size: "10m", max-file: "3"}` | Driver-specific log options. The default rotates json-file logs at 10 MB, keeping 3 files. Must be compatible with `tailscale_log_driver` if overridden. |
+
 ## Example Playbook
 
 ```yaml
