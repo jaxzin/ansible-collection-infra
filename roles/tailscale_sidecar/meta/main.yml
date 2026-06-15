@@ -106,3 +106,22 @@ argument_specs:
           With true (the default), tailscaled rewrites /etc/resolv.conf to
           point only at 100.100.100.100 (MagicDNS), making Docker DNS
           unreachable from inside the sidecar.
+
+      tailscale_log_driver:
+        type: str
+        default: "json-file"
+        description: >-
+          Docker logging driver for the sidecar container. Defaults to
+          json-file (local-file logging with rotation) so the container never
+          uses the Synology ContainerManager `db` driver, which wedges and
+          breaks healthchecks and container restarts.
+
+      tailscale_log_options:
+        type: dict
+        default:
+          max-size: "10m"
+          max-file: "3"
+        description: >-
+          Options passed to the logging driver (driver-specific). The default
+          rotates json-file logs at 10 MB, keeping 3 files. Must be compatible
+          with tailscale_log_driver if you override it.

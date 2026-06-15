@@ -25,6 +25,8 @@
     image: "{{ tailscale_image }}"
     state: started
     restart_policy: always
+    log_driver: "{{ tailscale_log_driver }}"
+    log_options: "{{ tailscale_log_options }}"
     networks:
       - name: "{{ tailscale_network_name }}"
     ports: "{{ tailscale_host_ports }}"

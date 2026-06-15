@@ -21,3 +21,12 @@ tailscale_accept_dns: true
 # Container resource limits
 tailscale_memory_limit: "96m"
 tailscale_memory_swap: "192m"
+
+# Container logging. Pin json-file (local-file) logging by default so the
+# sidecar never lands on the Synology ContainerManager `db` log driver,
+# which wedges (locks/hangs) and breaks both healthcheck execs and container
+# (re)starts. Consumers may override per deploy.
+tailscale_log_driver: "json-file"
+tailscale_log_options:
+  max-size: "10m"
+  max-file: "3"
