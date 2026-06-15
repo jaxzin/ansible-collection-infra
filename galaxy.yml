@@ -25,3 +25,9 @@ build_ignore:
   - .gitignore
   - .github
   - .ansible
+  - node_modules
+  - package.json
+  - package-lock.json
+  - .releaserc.json
+  - scripts
+  - docs

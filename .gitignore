@@ -3,3 +3,6 @@
 
 # Collection build artifacts
 *.tar.gz
+
+# semantic-release / Node release tooling
+node_modules/
