@@ -12,7 +12,10 @@ tags:
   - tailscale
   - homelab
   - sidecar
-dependencies: {}
+  - infrastructure
+  - networking
+dependencies:
+  community.docker: ">=3.0.0"
 repository: https://github.com/jaxzin/ansible-collection-infra
 documentation: https://github.com/jaxzin/ansible-collection-infra
 homepage: https://github.com/jaxzin/ansible-collection-infra
@@ -20,3 +23,5 @@ issues: https://github.com/jaxzin/ansible-collection-infra/issues
 build_ignore:
   - '*.tar.gz'
   - .gitignore
+  - .github
+  - .ansible

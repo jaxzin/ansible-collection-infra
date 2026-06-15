@@ -3,7 +3,7 @@ galaxy_info:
   author: Brian R. Jackson
   description: Deploy a Tailscale sidecar container with optional Tailscale Serve reverse proxy
   license: MIT
-  min_ansible_version: "2.14"
+  min_ansible_version: "2.15"
   platforms:
     - name: Debian
       versions:
