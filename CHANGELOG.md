@@ -1,5 +1,17 @@
 # Changelog
 
+# [1.3.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.2.0...1.3.0) (2026-06-16)
+
+
+### Bug Fixes
+
+* require ansible-core >=2.15 (drop EOL ansible-core 2.14) ([84691fe](https://github.com/jaxzin/ansible-collection-infra/commit/84691fee79cea0e4557de4cd1a33e4a1bb428ac0))
+
+
+### Features
+
+* declare community.docker (>=3.0.0) runtime dependency ([b39a3dc](https://github.com/jaxzin/ansible-collection-infra/commit/b39a3dc29aaea2f4457d45f1b8db62e2afd8f44f))
+
 ## [1.2.0] - 2026-06-15
 
 ### Added
