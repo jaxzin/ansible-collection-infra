@@ -25,6 +25,7 @@ build_ignore:
   - .gitignore
   - .github
   - .ansible
+  - .venv
   - node_modules
   - package.json
   - package-lock.json
