@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.5.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.4.0...1.5.0) (2026-06-17)
+
+
+### Features
+
+* **tailscale_sidecar:** fail fast on expired/revoked auth key ([#9](https://github.com/jaxzin/ansible-collection-infra/issues/9)) ([2cfd8cc](https://github.com/jaxzin/ansible-collection-infra/commit/2cfd8cc079df560f6b226ac06502ed3f6cdfd146))
+
 # [1.4.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.3.0...1.4.0) (2026-06-17)
 
 
