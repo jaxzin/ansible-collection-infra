@@ -44,10 +44,13 @@ tailscale_dns_servers:
 # upstream forwarder watchdog), since Docker allows only one healthcheck.
 tailscale_dns_watchdog_enabled: true
 
-# External name + resolver the watchdog probes to detect the empty
-# DefaultResolvers SERVFAIL condition. Only used when both
-# tailscale_dns_watchdog_enabled and tailscale_accept_dns are true.
+# External name the watchdog resolves to verify tailscaled's forwarder has
+# working upstreams. Only used when both tailscale_dns_watchdog_enabled and
+# tailscale_accept_dns are true.
 tailscale_dns_probe_name: "one.one.one.one"
+# Resolver the watchdog queries for tailscale_dns_probe_name. Defaults to
+# MagicDNS (100.100.100.100) — the resolver tailscaled manages — so querying
+# it directly detects the empty-DefaultResolvers condition.
 tailscale_dns_probe_resolver: "100.100.100.100"
 
 # Docker healthcheck cadence for the watchdog.

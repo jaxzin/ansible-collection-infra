@@ -160,7 +160,11 @@ argument_specs:
         type: str
         default: "100.100.100.100"
         description: >-
-          Resolver the watchdog queries for tailscale_dns_probe_name (MagicDNS).
+          Resolver the watchdog queries for tailscale_dns_probe_name. Defaults
+          to MagicDNS (100.100.100.100) — the resolver tailscaled manages — so
+          querying it directly detects the empty-DefaultResolvers condition.
+          Only used when tailscale_dns_watchdog_enabled and tailscale_accept_dns
+          are true.
 
       tailscale_dns_watchdog_interval:
         type: str
@@ -185,7 +189,6 @@ argument_specs:
 
       tailscale_dns_watchdog_host_dir:
         type: str
-        required: false
         description: >-
           Host directory the watchdog script (dns-watchdog.sh) is installed into
           and bind-mounted from. Defaults (in defaults/main.yml) to a
