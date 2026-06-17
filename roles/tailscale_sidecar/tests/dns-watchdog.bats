@@ -79,6 +79,7 @@ teardown() {
     [ "$status" -eq 0 ]
     grep -q -- '--accept-dns=false' "$TS_LOG"
     grep -q -- '--accept-dns=true' "$TS_LOG"
+    echo "$output" | grep -q 'bouncing accept-dns'
 }
 
 @test "watchdog: upstream stays broken after bounce -> exit 1" {
@@ -89,6 +90,7 @@ teardown() {
     run sh "$SCRIPT"
     [ "$status" -eq 1 ]
     grep -q -- '--accept-dns=false' "$TS_LOG"
+    grep -q -- '--accept-dns=true' "$TS_LOG"
 }
 
 @test "accept_dns=false: heal only, probe skipped, exit 0" {

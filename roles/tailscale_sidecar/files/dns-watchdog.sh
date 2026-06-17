@@ -54,7 +54,7 @@ heal_resolv_conf() {
 # available (busybox has it; some dev machines do not).
 probe_upstream() {
     if command -v timeout >/dev/null 2>&1; then
-        timeout 3 nslookup "$PROBE_NAME" "$PROBE_RESOLVER" >/dev/null 2>&1
+        timeout 2 nslookup "$PROBE_NAME" "$PROBE_RESOLVER" >/dev/null 2>&1
     else
         nslookup "$PROBE_NAME" "$PROBE_RESOLVER" >/dev/null 2>&1
     fi
@@ -62,6 +62,7 @@ probe_upstream() {
 
 # 3. Force tailscaled to re-apply netmap DNS to its forwarder.
 bounce_accept_dns() {
+    echo "dns-watchdog: upstream SERVFAIL detected; bouncing accept-dns to force re-apply" >&2
     tailscale set --accept-dns=false >/dev/null 2>&1
     sleep "$SETTLE"
     tailscale set --accept-dns="$ACCEPT_DNS" >/dev/null 2>&1
