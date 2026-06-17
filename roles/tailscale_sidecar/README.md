@@ -31,6 +31,12 @@ See `defaults/main.yml` for defaults and `meta/main.yml` for full argument specs
 | `tailscale_serve_proxy_host` | `127.0.0.1` | Backend host to proxy to |
 | `tailscale_serve_proxy_port` | `""` | Backend port to proxy to |
 
+### Networking mode
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `tailscale_userspace_networking` | `false` | `false` = **kernel mode**: tailscaled brings up a kernel TUN interface, so the container gets `CAP_NET_ADMIN` + `CAP_SYS_MODULE` and the `/dev/net/tun` device. `true` = **userspace mode**: WireGuard runs entirely in user space, so the role **drops** those capabilities and the `/dev/net/tun` mount and exposes a SOCKS5 proxy on `:1055` and an outbound HTTP CONNECT proxy on `:1099` so peer containers can route outbound tailnet traffic through this sidecar. See [userspace networking](https://tailscale.com/kb/1112/userspace-networking). |
+
 ### DNS
 
 | Variable | Default | Description |

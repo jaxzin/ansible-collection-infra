@@ -94,6 +94,19 @@ argument_specs:
         default: ""
         description: Extra arguments passed to tailscaled via TS_EXTRA_ARGS
 
+      tailscale_userspace_networking:
+        type: bool
+        default: false
+        description: >-
+          Networking mode. false (default) runs kernel mode: tailscaled brings
+          up a kernel TUN interface, requiring CAP_NET_ADMIN + CAP_SYS_MODULE
+          and the /dev/net/tun device. true runs userspace mode: WireGuard runs
+          entirely in user space, so the role drops those capabilities and the
+          /dev/net/tun mount and exposes a SOCKS5 proxy on :1055 and an outbound
+          HTTP CONNECT proxy on :1099 so peer containers can route outbound
+          tailnet traffic through this sidecar. See
+          https://tailscale.com/kb/1112/userspace-networking
+
       tailscale_accept_dns:
         type: bool
         default: true
