@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.4.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.3.0...1.4.0) (2026-06-17)
+
+
+### Features
+
+* **tailscale_sidecar:** self-heal DNS so tailscaled's empty DefaultResolvers can't break the netns ([#8](https://github.com/jaxzin/ansible-collection-infra/issues/8)) ([3c86b42](https://github.com/jaxzin/ansible-collection-infra/commit/3c86b42fb6148cc65586c270a3d81a545dc1cc4b)), closes [#7](https://github.com/jaxzin/ansible-collection-infra/issues/7)
+
 # [1.3.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.2.0...1.3.0) (2026-06-16)
 
 
