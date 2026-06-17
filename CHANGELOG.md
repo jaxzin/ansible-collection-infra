@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.6.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.5.0...1.6.0) (2026-06-17)
+
+
+### Features
+
+* **tailscale_sidecar:** add opt-in userspace networking mode ([#10](https://github.com/jaxzin/ansible-collection-infra/issues/10)) ([d361f54](https://github.com/jaxzin/ansible-collection-infra/commit/d361f54898e418f416411b8d9b7f946f6a7a6593))
+
 # [1.5.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.4.0...1.5.0) (2026-06-17)
 
 
