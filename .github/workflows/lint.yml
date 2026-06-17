@@ -37,3 +37,26 @@ jobs:
 
       - name: Run ansible-lint
         run: uv run ansible-lint
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the collection
+        uses: actions/checkout@v6.0.3
+
+      - name: Run shellcheck on the DNS watchdog script
+        run: shellcheck roles/tailscale_sidecar/files/dns-watchdog.sh
+
+  bats:
+    name: bats
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the collection
+        uses: actions/checkout@v6.0.3
+
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats
+
+      - name: Run the DNS watchdog unit tests
+        run: bats roles/tailscale_sidecar/tests/
