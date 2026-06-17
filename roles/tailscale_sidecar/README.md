@@ -69,7 +69,7 @@ on each interval:
 | `tailscale_dns_watchdog_timeout` | `10s` | Healthcheck timeout. |
 | `tailscale_dns_watchdog_retries` | `3` | Failures before reported unhealthy. |
 | `tailscale_dns_watchdog_start_period` | `10s` | Grace period before failures count. |
-| `tailscale_dns_watchdog_host_dir` | `<state_dir>/../tailscale-dns-watchdog` | Host dir the script is installed into and mounted from. |
+| `tailscale_dns_watchdog_host_dir` | sibling of `tailscale_state_dir` (…/tailscale-dns-watchdog) | Host dir the script is installed into and mounted from. |
 
 ### Logging
 
