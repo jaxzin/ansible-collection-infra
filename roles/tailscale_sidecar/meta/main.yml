@@ -125,3 +125,68 @@ argument_specs:
           Options passed to the logging driver (driver-specific). The default
           rotates json-file logs at 10 MB, keeping 3 files. Must be compatible
           with tailscale_log_driver if you override it.
+
+      tailscale_dns_servers:
+        type: list
+        elements: str
+        default:
+          - "100.100.100.100"
+        description: >-
+          Upstream DNS servers set on the sidecar container (Docker
+          dns_servers). Defaults to MagicDNS (100.100.100.100) so Docker's
+          embedded resolver (127.0.0.11) has a working upstream. Set to [] to
+          leave Docker's default resolver wiring untouched.
+
+      tailscale_dns_watchdog_enabled:
+        type: bool
+        default: true
+        description: >-
+          Enable the DNS self-heal + upstream watchdog Docker healthcheck
+          (issue #7). Keeps Docker's embedded resolver (127.0.0.11) at the top
+          of resolv.conf and, when tailscale_accept_dns is true, detects the
+          empty-DefaultResolvers SERVFAIL condition and bounces accept-dns to
+          force tailscaled to re-apply DNS. Disabling removes BOTH self-heal
+          halves.
+
+      tailscale_dns_probe_name:
+        type: str
+        default: "one.one.one.one"
+        description: >-
+          External hostname the watchdog resolves to verify tailscaled's
+          forwarder has working upstreams. Only used when
+          tailscale_dns_watchdog_enabled and tailscale_accept_dns are true.
+
+      tailscale_dns_probe_resolver:
+        type: str
+        default: "100.100.100.100"
+        description: >-
+          Resolver the watchdog queries for tailscale_dns_probe_name (MagicDNS).
+
+      tailscale_dns_watchdog_interval:
+        type: str
+        default: "15s"
+        description: Docker healthcheck interval for the DNS watchdog.
+
+      tailscale_dns_watchdog_timeout:
+        type: str
+        default: "10s"
+        description: Docker healthcheck timeout for the DNS watchdog.
+
+      tailscale_dns_watchdog_retries:
+        type: int
+        default: 3
+        description: >-
+          Docker healthcheck retries before the sidecar is reported unhealthy.
+
+      tailscale_dns_watchdog_start_period:
+        type: str
+        default: "10s"
+        description: Docker healthcheck start period before failures count.
+
+      tailscale_dns_watchdog_host_dir:
+        type: str
+        required: false
+        description: >-
+          Host directory the watchdog script (dns-watchdog.sh) is installed into
+          and bind-mounted from. Defaults (in defaults/main.yml) to a
+          tailscale-dns-watchdog sibling of tailscale_state_dir.
