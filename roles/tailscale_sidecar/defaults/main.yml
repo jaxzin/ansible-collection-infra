@@ -31,6 +31,14 @@ tailscale_log_options:
   max-size: "10m"
   max-file: "3"
 
+# After the sidecar reaches Running, also assert it has at least one tailnet
+# peer (a usable OUTBOUND route). Leave false for inbound/Serve-only sidecars,
+# where a single-node or peer-less tailnet is valid and would otherwise fail
+# this check. Set true when workloads proxy outbound through this sidecar so a
+# "registered but not routing" sidecar (zero peers -> ENETUNREACH) fails the
+# play fast instead of failing opaquely later.
+tailscale_assert_tailnet_route: false
+
 # --- DNS self-heal & upstream watchdog (issue #7) ---
 # Upstream DNS servers set on the sidecar container (Docker dns_servers).
 # Defaults to MagicDNS so Docker's embedded resolver (127.0.0.11) has a working

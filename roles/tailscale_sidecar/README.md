@@ -71,6 +71,20 @@ on each interval:
 | `tailscale_dns_watchdog_start_period` | `10s` | Grace period before failures count. |
 | `tailscale_dns_watchdog_host_dir` | sibling of `tailscale_state_dir` (…/tailscale-dns-watchdog) | Host dir the script is installed into and mounted from. |
 
+### Connection verification
+
+After deploying the container, the role waits for `tailscaled` to reach
+`Running`, then **fails fast with an actionable message** if the sidecar did
+not authenticate — the classic signature of an **expired or revoked
+`TS_AUTHKEY`** (`BackendState` of `NeedsLogin`, `NoState`, or
+`NeedsMachineAuth`). It then asserts the sidecar is `Running` and
+`Self.Online`. Persistent sidecars require a **reusable, non-ephemeral** auth
+key.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `tailscale_assert_tailnet_route` | `false` | Also assert the sidecar has ≥1 tailnet peer (a usable **outbound** route). Leave `false` for inbound/Serve-only sidecars, where a single-node or peer-less tailnet is valid. Set `true` when workloads proxy outbound through this sidecar, so a "registered but not routing" sidecar (zero peers → `ENETUNREACH`) fails the play fast. |
+
 ### Logging
 
 | Variable | Default | Description |

@@ -126,6 +126,17 @@ argument_specs:
           rotates json-file logs at 10 MB, keeping 3 files. Must be compatible
           with tailscale_log_driver if you override it.
 
+      tailscale_assert_tailnet_route:
+        type: bool
+        default: false
+        description: >-
+          After the sidecar reaches Running, also assert it has at least one
+          tailnet peer (a usable outbound route). Leave false for
+          inbound/Serve-only sidecars, where a single-node or peer-less tailnet
+          is valid and would otherwise fail this check. Set true when workloads
+          proxy outbound through this sidecar so a registered-but-not-routing
+          sidecar (zero peers, ENETUNREACH) fails the play fast.
+
       tailscale_dns_servers:
         type: list
         elements: str

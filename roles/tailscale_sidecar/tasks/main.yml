@@ -109,9 +109,72 @@
     container: "{{ tailscale_container_name }}"
     command: tailscale status --json
   register: ts_status
-  until: (ts_status.stdout | from_json).BackendState == "Running"
+  # rc guard: a failed exec or empty stdout must not crash from_json. Jinja
+  # `and` short-circuits, so BackendState is only parsed once rc == 0.
+  until: >-
+    ts_status.rc is defined and ts_status.rc == 0 and
+    (ts_status.stdout | from_json).BackendState == "Running"
   retries: 30
   delay: 2
+  changed_when: false
+  # Do NOT hard-fail on retry exhaustion: the tasks below turn a dead/expired
+  # TS_AUTHKEY or a "registered but not routing" sidecar into a named,
+  # actionable error instead of an opaque "until" timeout.
+  failed_when: false
+  when: not ansible_check_mode
+
+- name: Parse final Tailscale status
+  ansible.builtin.set_fact:
+    ts_state: >-
+      {{ (ts_status.stdout | from_json)
+         if (ts_status.stdout is defined and (ts_status.stdout | length) > 0)
+         else {} }}
+  when: not ansible_check_mode
+
+- name: Fail fast when the Tailscale auth key is expired or revoked
+  ansible.builtin.fail:
+    msg: >-
+      Tailscale sidecar '{{ tailscale_container_name }}' did not authenticate
+      (BackendState={{ ts_state.BackendState | default('unknown') }}). This is
+      the classic signature of an expired or revoked TS_AUTHKEY. Rotate the auth
+      key in the Tailscale admin console and update it wherever this role's
+      tailscale_authkey is sourced. Persistent sidecars require a reusable,
+      non-ephemeral auth key.
+  when:
+    - not ansible_check_mode
+    - ts_state.BackendState | default('') in ['NeedsLogin', 'NoState', 'NeedsMachineAuth']
+
+- name: Assert the Tailscale sidecar authenticated and is online
+  ansible.builtin.assert:
+    that:
+      - ts_state.BackendState | default('') == 'Running'
+      - ts_state.Self.Online | default(false) | bool
+    fail_msg: >-
+      Tailscale sidecar '{{ tailscale_container_name }}' is
+      BackendState={{ ts_state.BackendState | default('unknown') }},
+      Self.Online={{ ts_state.Self.Online | default('?') }} — it did not come up
+      cleanly. If BackendState is not Running, the TS_AUTHKEY is most likely
+      expired or revoked; rotate it (reusable, non-ephemeral).
+    success_msg: >-
+      Tailscale sidecar '{{ tailscale_container_name }}' is Running and online.
+  when: not ansible_check_mode
+
+- name: Assert the Tailscale sidecar has a usable tailnet route
+  ansible.builtin.assert:
+    that:
+      - (ts_state.Peer | default({}) | length) > 0
+    fail_msg: >-
+      Tailscale sidecar '{{ tailscale_container_name }}' is Running but has zero
+      tailnet peers — registered but NOT routing. Workloads proxying outbound
+      through this sidecar would fail with ENETUNREACH. Enable this check only
+      for outbound/proxy sidecars; leave tailscale_assert_tailnet_route=false
+      for inbound/Serve-only sidecars, where a peer-less tailnet is valid.
+    success_msg: >-
+      Tailscale sidecar '{{ tailscale_container_name }}' has
+      {{ ts_state.Peer | default({}) | length }} tailnet peer(s).
+  when:
+    - not ansible_check_mode
+    - tailscale_assert_tailnet_route | bool
 
 - name: Reconcile sidecar DNS immediately after (re)deploy
   # Runs the watchdog once at deploy time so DNS converges immediately instead
