@@ -9,6 +9,15 @@ tailscale_serve_proxy_port: ""
 tailscale_host_ports: []
 tailscale_extra_args: ""
 
+# Networking mode. false (default) = kernel mode: tailscaled brings up a kernel
+# TUN interface, which needs CAP_NET_ADMIN + CAP_SYS_MODULE and the
+# /dev/net/tun device. true = userspace mode: WireGuard runs entirely in user
+# space, so the role drops those capabilities and the /dev/net/tun mount and
+# exposes a SOCKS5 proxy on :1055 and an outbound HTTP CONNECT proxy on :1099 so
+# peer containers can route outbound tailnet traffic through this sidecar.
+# https://tailscale.com/kb/1112/userspace-networking
+tailscale_userspace_networking: false
+
 # Whether tailscaled inside the sidecar should take over /etc/resolv.conf.
 # Set to false when the sidecar lives on a Docker bridge network and must
 # resolve other containers by name via Docker's embedded DNS at 127.0.0.11
