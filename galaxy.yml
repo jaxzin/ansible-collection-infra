@@ -32,3 +32,4 @@ build_ignore:
   - .releaserc.json
   - scripts
   - docs
+  - roles/tailscale_sidecar/tests

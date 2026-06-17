@@ -30,3 +30,36 @@ tailscale_log_driver: "json-file"
 tailscale_log_options:
   max-size: "10m"
   max-file: "3"
+
+# --- DNS self-heal & upstream watchdog (issue #7) ---
+# Upstream DNS servers set on the sidecar container (Docker dns_servers).
+# Defaults to MagicDNS so Docker's embedded resolver (127.0.0.11) has a working
+# upstream: Docker names -> 127.0.0.11; tailnet/external -> 127.0.0.11 ->
+# 100.100.100.100 -> Cloudflare. Set to [] to leave Docker's default wiring.
+tailscale_dns_servers:
+  - "100.100.100.100"
+
+# Master toggle for the DNS self-heal + upstream watchdog Docker healthcheck.
+# Disabling removes BOTH self-heal halves (downstream resolv.conf heal and the
+# upstream forwarder watchdog), since Docker allows only one healthcheck.
+tailscale_dns_watchdog_enabled: true
+
+# External name the watchdog resolves to verify tailscaled's forwarder has
+# working upstreams. Only used when both tailscale_dns_watchdog_enabled and
+# tailscale_accept_dns are true.
+tailscale_dns_probe_name: "one.one.one.one"
+# Resolver the watchdog queries for tailscale_dns_probe_name. Defaults to
+# MagicDNS (100.100.100.100) — the resolver tailscaled manages — so querying
+# it directly detects the empty-DefaultResolvers condition.
+tailscale_dns_probe_resolver: "100.100.100.100"
+
+# Docker healthcheck cadence for the watchdog.
+tailscale_dns_watchdog_interval: "15s"
+tailscale_dns_watchdog_timeout: "10s"
+tailscale_dns_watchdog_retries: 3
+tailscale_dns_watchdog_start_period: "10s"
+
+# Host directory the watchdog script (dns-watchdog.sh) is installed into and
+# bind-mounted from. Defaults to a sibling of the state dir so it lands in the
+# operator's docker tree (e.g. /volume1/docker/myapp/tailscale-dns-watchdog).
+tailscale_dns_watchdog_host_dir: "{{ tailscale_state_dir | dirname }}/tailscale-dns-watchdog"

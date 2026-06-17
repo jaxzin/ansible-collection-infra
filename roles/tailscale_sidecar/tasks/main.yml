@@ -5,6 +5,20 @@
     state: directory
     mode: "0700"
 
+- name: Create DNS watchdog script directory on the host
+  ansible.builtin.file:
+    path: "{{ tailscale_dns_watchdog_host_dir }}"
+    state: directory
+    mode: "0755"
+  when: tailscale_dns_watchdog_enabled
+
+- name: Install the DNS watchdog script on the host
+  ansible.builtin.copy:
+    src: dns-watchdog.sh
+    dest: "{{ tailscale_dns_watchdog_host_dir }}/dns-watchdog.sh"
+    mode: "0755"
+  when: tailscale_dns_watchdog_enabled
+
 - name: Create Tailscale Serve config directory
   ansible.builtin.file:
     path: "{{ tailscale_serve_config_dir }}"
@@ -25,6 +39,18 @@
     image: "{{ tailscale_image }}"
     state: started
     restart_policy: always
+    dns_servers: "{{ tailscale_dns_servers if (tailscale_dns_servers | length > 0) else omit }}"
+    healthcheck: >-
+      {{
+        {
+          'test': ['CMD', '/bin/sh', '/usr/local/bin/dns-watchdog.sh'],
+          'interval': tailscale_dns_watchdog_interval,
+          'timeout': tailscale_dns_watchdog_timeout,
+          'retries': tailscale_dns_watchdog_retries,
+          'start_period': tailscale_dns_watchdog_start_period,
+        }
+        if tailscale_dns_watchdog_enabled else omit
+      }}
     log_driver: "{{ tailscale_log_driver }}"
     log_options: "{{ tailscale_log_options }}"
     networks:
@@ -35,6 +61,7 @@
     capabilities:
       - NET_ADMIN
       - SYS_MODULE
+    # TS_DNS_ACCEPT_DNS mirrors TS_ACCEPT_DNS (image entrypoint) on purpose — the watchdog script reads its own key; do not dedupe.
     env: >-
       {{
         {
@@ -52,6 +79,14 @@
             {'TS_EXTRA_ARGS': tailscale_extra_args}
             if tailscale_extra_args else {}
           )
+        | combine(
+            {
+              'TS_DNS_ACCEPT_DNS': tailscale_accept_dns | string | lower,
+              'TS_DNS_PROBE_NAME': tailscale_dns_probe_name,
+              'TS_DNS_PROBE_RESOLVER': tailscale_dns_probe_resolver,
+            }
+            if tailscale_dns_watchdog_enabled else {}
+          )
       }}
     volumes: >-
       {{
@@ -63,6 +98,10 @@
             [tailscale_serve_config_dir ~ ':/etc/tailscale:ro']
             if tailscale_serve_enabled else []
           )
+        + (
+            [tailscale_dns_watchdog_host_dir ~ '/dns-watchdog.sh:/usr/local/bin/dns-watchdog.sh:ro']
+            if tailscale_dns_watchdog_enabled else []
+          )
       }}
 
 - name: Wait for Tailscale to connect to tailnet
@@ -73,3 +112,18 @@
   until: (ts_status.stdout | from_json).BackendState == "Running"
   retries: 30
   delay: 2
+
+- name: Reconcile sidecar DNS immediately after (re)deploy
+  # Runs the watchdog once at deploy time so DNS converges immediately instead
+  # of waiting up to one healthcheck start_period. Non-blocking: failures are
+  # ignored here (failed_when: false) because the healthcheck keeps
+  # reconciling on its interval — a transient miss must not fail the play that
+  # fronts tier-1 services.
+  community.docker.docker_container_exec:
+    container: "{{ tailscale_container_name }}"
+    command: /bin/sh /usr/local/bin/dns-watchdog.sh
+  changed_when: false
+  failed_when: false
+  when:
+    - tailscale_dns_watchdog_enabled
+    - not ansible_check_mode
