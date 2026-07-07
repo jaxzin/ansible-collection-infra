@@ -14,10 +14,13 @@ setup() {
     mkdir -p "$STUBS"
 
     # `tailscale` stub: logs its args; simulates that `--accept-dns=true`
-    # re-applies DNS by creating MARKER (unless TS_STUB_NOFIX=1).
+    # re-applies DNS by creating MARKER (unless TS_STUB_NOFIX=1). With
+    # TS_STUB_DOWN=1 every invocation fails, simulating an unresponsive
+    # tailscaled (the localapi socket is gone/wedged).
     cat > "${STUBS}/tailscale" <<'STUB'
 #!/bin/sh
 echo "$*" >> "$TS_LOG"
+[ "${TS_STUB_DOWN:-0}" = "1" ] && exit 1
 case "$*" in
   *"--accept-dns=true"*) [ "${TS_STUB_NOFIX:-0}" = "1" ] || : > "$MARKER" ;;
 esac
@@ -82,15 +85,33 @@ teardown() {
     echo "$output" | grep -q 'bouncing accept-dns'
 }
 
-@test "watchdog: upstream stays broken after bounce -> exit 1" {
+# The 2026-07-05 incident (jaxzin-infra-bootstrap#148, this repo #12): a
+# ~3h window of flaky upstream connectivity made the post-bounce probe fail
+# repeatedly -> exit 1 -> autoheal restart-looped the sidecar -> the
+# netns-sharing consumer (gitea) was stranded in a dead namespace -> hard
+# outage. A container restart cannot fix the internet, so an un-bounceable
+# upstream failure must NOT report unhealthy. Exit 1 is reserved for the one
+# condition a restart plausibly cures: tailscaled itself unresponsive.
+@test "watchdog: broken after bounce but tailscaled up -> upstream outage, exit 0" {
     printf 'nameserver 127.0.0.11\n' > "$RESOLV"
     export TS_DNS_ACCEPT_DNS=true
     export NSLOOKUP_FORCE_OK=0
     export TS_STUB_NOFIX=1   # bounce does not repair
     run sh "$SCRIPT"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
     grep -q -- '--accept-dns=false' "$TS_LOG"
     grep -q -- '--accept-dns=true' "$TS_LOG"
+    echo "$output" | grep -q 'upstream outage'
+}
+
+@test "watchdog: broken after bounce and tailscaled unresponsive -> exit 1" {
+    printf 'nameserver 127.0.0.11\n' > "$RESOLV"
+    export TS_DNS_ACCEPT_DNS=true
+    export NSLOOKUP_FORCE_OK=0
+    export TS_STUB_NOFIX=1
+    export TS_STUB_DOWN=1    # tailscaled localapi gone: restart CAN cure this
+    run sh "$SCRIPT"
+    [ "$status" -eq 1 ]
 }
 
 @test "accept_dns=false: heal only, probe skipped, exit 0" {
