@@ -61,9 +61,18 @@ on each interval:
 2. **Upstream watchdog** — when `tailscale_accept_dns` is `true`, probes an
    external name against MagicDNS; if it SERVFAILs, it bounces
    `accept-dns` false→true to force tailscaled to re-apply its DNS config
-   (verified non-disruptive). After the bounce it re-probes and reports the
-   container `unhealthy` only if DNS is still broken — informational only, since
-   `restart_policy: always` does not restart unhealthy containers.
+   (verified non-disruptive). After the bounce it re-probes. If the probe
+   still fails, the exit code distinguishes what a restart could fix (#12):
+   `unhealthy` **only** when tailscaled itself is unresponsive (a restart
+   plausibly cures that); if tailscaled is up, the failure is an upstream
+   network/DNS outage that no container restart can fix, so the script logs
+   loudly and stays healthy. This matters when a restart-on-unhealthy
+   supervisor (e.g. autoheal) watches the sidecar: unhealthy-on-upstream-outage
+   would restart-loop it, and each restart strands any container sharing the
+   sidecar's network namespace (`network_mode: container:`) in a dead
+   namespace — those consumers keep serving into the void while reporting
+   healthy. (`restart_policy: always` alone does not restart unhealthy
+   containers; the risk comes from such supervisors.)
 
 | Variable | Default | Description |
 |----------|---------|-------------|

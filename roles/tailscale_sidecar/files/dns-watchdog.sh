@@ -14,7 +14,13 @@
 #      false->true to force tailscaled to re-apply netmap DNS to its forwarder.
 #      Verified non-disruptive — consumers stay up across the bounce.
 #
-# Exit 0 = healthy; exit 1 = upstream DNS still broken after a bounce attempt.
+# Exit 0 = healthy — including an upstream outage the bounce can't fix while
+#          tailscaled itself is up (logged loudly; a container restart cannot
+#          fix the upstream, and reporting unhealthy would invite a
+#          restart-on-unhealthy supervisor to restart-loop the sidecar,
+#          stranding netns-sharing consumers — the 2026-07-05 incident, #12).
+# Exit 1 = restart-curable failure only: tailscaled unresponsive after a
+#          failed post-bounce probe.
 #
 # Configuration (environment; the role injects these, defaults keep it runnable
 # standalone and are what the bats tests drive):
@@ -68,6 +74,14 @@ bounce_accept_dns() {
     tailscale set --accept-dns="$ACCEPT_DNS" >/dev/null 2>&1
 }
 
+# 4. Is tailscaled itself responsive? Distinguishes the two post-bounce
+# failure worlds: tailscaled up but the probe still failing = the upstream
+# network/DNS is down, which no container restart can fix; tailscale CLI
+# unable to reach tailscaled = the daemon is wedged, which a restart CAN fix.
+tailscaled_up() {
+    tailscale status >/dev/null 2>&1
+}
+
 main() {
     heal_resolv_conf || exit 1
 
@@ -83,6 +97,16 @@ main() {
     bounce_accept_dns
 
     if probe_upstream; then
+        exit 0
+    fi
+
+    # Post-bounce failure. Only report unhealthy when a restart plausibly
+    # cures it. An un-bounceable upstream outage must NOT flip the container
+    # unhealthy: a restart-on-unhealthy supervisor (autoheal) would loop the
+    # sidecar, and each restart strands netns-sharing consumers in a dead
+    # namespace — the 2026-07-05 gitea outage (#12). Log loudly instead.
+    if tailscaled_up; then
+        echo "dns-watchdog: upstream outage — probe still failing after bounce but tailscaled is up; staying healthy (a restart cannot fix the upstream)" >&2
         exit 0
     fi
     exit 1
