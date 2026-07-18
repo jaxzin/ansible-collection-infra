@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/jaxzin/ansible-collection-infra/compare/1.6.0...1.6.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **tailscale_sidecar:** don't report unhealthy for upstream outages the bounce can't fix ([#12](https://github.com/jaxzin/ansible-collection-infra/issues/12)) ([#13](https://github.com/jaxzin/ansible-collection-infra/issues/13)) ([3904efd](https://github.com/jaxzin/ansible-collection-infra/commit/3904efdc1c21c37aa79e4160624b0e30b7b392c5)), closes [jaxzin-infra-bootstrap#148](https://github.com/jaxzin-infra-bootstrap/issues/148)
+
 # [1.6.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.5.0...1.6.0) (2026-06-17)
 
 
