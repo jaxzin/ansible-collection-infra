@@ -19,6 +19,13 @@
     mode: "0755"
   when: tailscale_dns_watchdog_enabled
 
+- name: Create the tailscaled socket directory on the host
+  ansible.builtin.file:
+    path: "{{ tailscale_socket_host_dir }}"
+    state: directory
+    mode: "0700"
+  when: tailscale_socket_host_dir | length > 0
+
 - name: Create Tailscale Serve config directory
   ansible.builtin.file:
     path: "{{ tailscale_serve_config_dir }}"
@@ -53,8 +60,8 @@
       }}
     log_driver: "{{ tailscale_log_driver }}"
     log_options: "{{ tailscale_log_options }}"
-    networks:
-      - name: "{{ tailscale_network_name }}"
+    networks: "{{ [{'name': tailscale_network_name}] + tailscale_extra_networks }}"
+    sysctls: "{{ tailscale_sysctls if (tailscale_sysctls | length > 0) else omit }}"
     ports: "{{ tailscale_host_ports }}"
     memory: "{{ tailscale_memory_limit }}"
     memory_swap: "{{ tailscale_memory_swap }}"
@@ -81,6 +88,10 @@
         | combine(
             {'TS_SERVE_CONFIG': '/etc/tailscale/serve.json'}
             if tailscale_serve_enabled else {}
+          )
+        | combine(
+            {'TS_SOCKET': '/var/run/tailscale/tailscaled.sock'}
+            if tailscale_socket_host_dir | length > 0 else {}
           )
         | combine(
             {'TS_EXTRA_ARGS': tailscale_extra_args}
@@ -118,6 +129,10 @@
         + (
             [tailscale_dns_watchdog_host_dir ~ '/dns-watchdog.sh:/usr/local/bin/dns-watchdog.sh:ro']
             if tailscale_dns_watchdog_enabled else []
+          )
+        + (
+            [tailscale_socket_host_dir ~ ':/var/run/tailscale']
+            if tailscale_socket_host_dir | length > 0 else []
           )
       }}
 

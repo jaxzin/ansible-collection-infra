@@ -94,6 +94,39 @@ argument_specs:
         default: ""
         description: Extra arguments passed to tailscaled via TS_EXTRA_ARGS
 
+      tailscale_extra_networks:
+        type: list
+        elements: dict
+        default: []
+        description: >-
+          Additional Docker networks to attach the sidecar to, beyond
+          tailscale_network_name. Each entry is passed through verbatim as a
+          community.docker.docker_container `networks` entry (name,
+          ipv4_address, aliases, ...). Example use: a macvlan network with a
+          fixed ipv4_address so the shared netns gets its own LAN IP.
+
+      tailscale_sysctls:
+        type: dict
+        default: {}
+        description: >-
+          Kernel parameters set on the sidecar container (Docker `sysctls`).
+          The sidecar owns the network namespace, so network sysctls for every
+          container sharing it must be set here; Docker rejects `sysctls` on a
+          container using network_mode container:. Example:
+          net.ipv4.ip_unprivileged_port_start "0" lets a rootless app in the
+          shared netns bind privileged ports.
+
+      tailscale_socket_host_dir:
+        type: str
+        default: ""
+        description: >-
+          Host directory to expose tailscaled's LocalAPI socket in. When set,
+          it is bind-mounted at /var/run/tailscale and TS_SOCKET points at
+          /var/run/tailscale/tailscaled.sock, so another container mounting the
+          same host directory can reach tailscaled (e.g. a reverse proxy
+          fetching the node's *.ts.net certificate). The socket grants full
+          control of the tailnet node. Empty (default) keeps it private.
+
       tailscale_userspace_networking:
         type: bool
         default: false

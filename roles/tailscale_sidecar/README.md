@@ -37,6 +37,16 @@ See `defaults/main.yml` for defaults and `meta/main.yml` for full argument specs
 |----------|---------|-------------|
 | `tailscale_userspace_networking` | `false` | `false` = **kernel mode**: tailscaled brings up a kernel TUN interface, so the container gets `CAP_NET_ADMIN` + `CAP_SYS_MODULE` and the `/dev/net/tun` device. `true` = **userspace mode**: WireGuard runs entirely in user space, so the role **drops** those capabilities and the `/dev/net/tun` mount and exposes a SOCKS5 proxy on `:1055` and an outbound HTTP CONNECT proxy on `:1099` so peer containers can route outbound tailnet traffic through this sidecar. See [userspace networking](https://tailscale.com/kb/1112/userspace-networking). |
 
+### Extra container wiring
+
+All default-off; leaving them unset renders the same container as before.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `tailscale_extra_networks` | `[]` | Additional Docker networks, each passed verbatim as a `community.docker.docker_container` `networks` entry. Example: a macvlan network with a fixed `ipv4_address`, giving the shared netns its own LAN IP. |
+| `tailscale_sysctls` | `{}` | Docker `sysctls` on the sidecar. The sidecar owns the netns, so network sysctls for every container sharing it go here (Docker rejects `sysctls` with `network_mode: container:`). Example: `net.ipv4.ip_unprivileged_port_start: "0"` so a rootless app can bind `:22`/`:443`. |
+| `tailscale_socket_host_dir` | `""` | Host dir bind-mounted at `/var/run/tailscale`, with `TS_SOCKET` pointed into it, so another container mounting the same dir can reach tailscaled's LocalAPI (e.g. Caddy fetching the node's `*.ts.net` cert). **The socket grants full control of the node.** |
+
 ### DNS
 
 | Variable | Default | Description |
