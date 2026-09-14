@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.7.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.6.1...1.7.0) (2026-09-14)
+
+
+### Features
+
+* **tailscale_sidecar:** add extra networks, MAC address and socket-dir knobs ([#16](https://github.com/jaxzin/ansible-collection-infra/issues/16)) ([11395d3](https://github.com/jaxzin/ansible-collection-infra/commit/11395d353e3582ba3ff204df1e17dab3e545db20))
+
 ## [1.6.1](https://github.com/jaxzin/ansible-collection-infra/compare/1.6.0...1.6.1) (2026-07-18)
 
 
