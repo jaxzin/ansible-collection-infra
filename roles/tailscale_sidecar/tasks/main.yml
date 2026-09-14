@@ -19,6 +19,13 @@
     mode: "0755"
   when: tailscale_dns_watchdog_enabled
 
+- name: Create the tailscaled socket directory on the host
+  ansible.builtin.file:
+    path: "{{ tailscale_socket_host_dir }}"
+    state: directory
+    mode: "0700"
+  when: tailscale_socket_host_dir | length > 0
+
 - name: Create Tailscale Serve config directory
   ansible.builtin.file:
     path: "{{ tailscale_serve_config_dir }}"
@@ -32,6 +39,23 @@
     dest: "{{ tailscale_serve_config_dir }}/serve.json"
     mode: "0644"
   when: tailscale_serve_enabled
+
+# Where a fixed MAC goes depends on the engine: Docker Engine >= 25 (API 1.44)
+# takes it per network endpoint and ignores the deprecated container-wide
+# field (removed in API 1.47); older engines accept ONLY the container-wide
+# field, which applies to the primary network. Detect, then place it.
+- name: Detect the Docker Engine version (placement of tailscale_mac_address)
+  community.docker.docker_host_info:
+  register: tailscale_sidecar_docker_host
+  when: tailscale_mac_address | length > 0
+
+- name: Decide where the fixed MAC is set
+  ansible.builtin.set_fact:
+    tailscale_sidecar_mac_per_network: >-
+      {{
+        (tailscale_mac_address | length > 0)
+        and (tailscale_sidecar_docker_host.host_info.ServerVersion.split('.')[0] | int >= 25)
+      }}
 
 - name: Deploy Tailscale sidecar container
   community.docker.docker_container:
@@ -53,8 +77,18 @@
       }}
     log_driver: "{{ tailscale_log_driver }}"
     log_options: "{{ tailscale_log_options }}"
-    networks:
-      - name: "{{ tailscale_network_name }}"
+    networks: >-
+      {{
+        [{'name': tailscale_network_name}
+         | combine({'mac_address': tailscale_mac_address} if tailscale_sidecar_mac_per_network | bool else {})]
+        + tailscale_extra_networks
+      }}
+    mac_address: >-
+      {{
+        tailscale_mac_address
+        if (tailscale_mac_address | length > 0 and not (tailscale_sidecar_mac_per_network | bool))
+        else omit
+      }}
     ports: "{{ tailscale_host_ports }}"
     memory: "{{ tailscale_memory_limit }}"
     memory_swap: "{{ tailscale_memory_swap }}"
@@ -81,6 +115,10 @@
         | combine(
             {'TS_SERVE_CONFIG': '/etc/tailscale/serve.json'}
             if tailscale_serve_enabled else {}
+          )
+        | combine(
+            {'TS_SOCKET': '/var/run/tailscale/tailscaled.sock'}
+            if tailscale_socket_host_dir | length > 0 else {}
           )
         | combine(
             {'TS_EXTRA_ARGS': tailscale_extra_args}
@@ -118,6 +156,10 @@
         + (
             [tailscale_dns_watchdog_host_dir ~ '/dns-watchdog.sh:/usr/local/bin/dns-watchdog.sh:ro']
             if tailscale_dns_watchdog_enabled else []
+          )
+        + (
+            [tailscale_socket_host_dir ~ ':/var/run/tailscale']
+            if tailscale_socket_host_dir | length > 0 else []
           )
       }}
 

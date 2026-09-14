@@ -9,6 +9,34 @@ tailscale_serve_proxy_port: ""
 tailscale_host_ports: []
 tailscale_extra_args: ""
 
+# --- Extra container wiring (all default-off) ---
+# Additional Docker networks to attach the sidecar to, beyond
+# tailscale_network_name. Each entry is passed through verbatim as a
+# community.docker.docker_container `networks` entry, e.g. a macvlan network
+# with a fixed address so the sidecar's netns gets its own LAN IP:
+#   - name: myapp-lan
+#     ipv4_address: 192.0.2.10
+tailscale_extra_networks: []
+
+# Fixed MAC address for the sidecar's PRIMARY network endpoint, i.e.
+# tailscale_network_name ("" = Docker assigns one). The role detects the
+# engine: Docker Engine >= 25 gets it per network endpoint; older engines only
+# support the container-wide MAC, which applies to the primary network. To give
+# a macvlan endpoint a stable identity (e.g. for a DHCP-server reservation),
+# make the macvlan network tailscale_network_name and move the bridge into
+# tailscale_extra_networks. Use a locally administered address (second hex
+# digit 2, 6, a or e).
+tailscale_mac_address: ""
+
+# Host directory to expose tailscaled's LocalAPI socket in. When non-empty the
+# directory is bind-mounted at /var/run/tailscale and TS_SOCKET points at
+# /var/run/tailscale/tailscaled.sock, so another container can mount the same
+# host directory and reach tailscaled (e.g. a reverse proxy fetching the node's
+# *.ts.net certificate). The socket grants full control of this tailnet node —
+# only mount it into containers you trust with that. "" (default) keeps the
+# socket private to the sidecar.
+tailscale_socket_host_dir: ""
+
 # Networking mode. false (default) = kernel mode: tailscaled brings up a kernel
 # TUN interface, which needs CAP_NET_ADMIN + CAP_SYS_MODULE and the
 # /dev/net/tun device. true = userspace mode: WireGuard runs entirely in user
