@@ -40,6 +40,23 @@
     mode: "0644"
   when: tailscale_serve_enabled
 
+# Where a fixed MAC goes depends on the engine: Docker Engine >= 25 (API 1.44)
+# takes it per network endpoint and ignores the deprecated container-wide
+# field (removed in API 1.47); older engines accept ONLY the container-wide
+# field, which applies to the primary network. Detect, then place it.
+- name: Detect the Docker Engine version (placement of tailscale_mac_address)
+  community.docker.docker_host_info:
+  register: tailscale_sidecar_docker_host
+  when: tailscale_mac_address | length > 0
+
+- name: Decide where the fixed MAC is set
+  ansible.builtin.set_fact:
+    tailscale_sidecar_mac_per_network: >-
+      {{
+        (tailscale_mac_address | length > 0)
+        and (tailscale_sidecar_docker_host.host_info.ServerVersion.split('.')[0] | int >= 25)
+      }}
+
 - name: Deploy Tailscale sidecar container
   community.docker.docker_container:
     name: "{{ tailscale_container_name }}"
@@ -60,8 +77,18 @@
       }}
     log_driver: "{{ tailscale_log_driver }}"
     log_options: "{{ tailscale_log_options }}"
-    networks: "{{ [{'name': tailscale_network_name}] + tailscale_extra_networks }}"
-    sysctls: "{{ tailscale_sysctls if (tailscale_sysctls | length > 0) else omit }}"
+    networks: >-
+      {{
+        [{'name': tailscale_network_name}
+         | combine({'mac_address': tailscale_mac_address} if tailscale_sidecar_mac_per_network | bool else {})]
+        + tailscale_extra_networks
+      }}
+    mac_address: >-
+      {{
+        tailscale_mac_address
+        if (tailscale_mac_address | length > 0 and not (tailscale_sidecar_mac_per_network | bool))
+        else omit
+      }}
     ports: "{{ tailscale_host_ports }}"
     memory: "{{ tailscale_memory_limit }}"
     memory_swap: "{{ tailscale_memory_swap }}"

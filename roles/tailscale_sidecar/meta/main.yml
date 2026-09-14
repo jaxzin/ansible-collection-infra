@@ -105,16 +105,17 @@ argument_specs:
           ipv4_address, aliases, ...). Example use: a macvlan network with a
           fixed ipv4_address so the shared netns gets its own LAN IP.
 
-      tailscale_sysctls:
-        type: dict
-        default: {}
+      tailscale_mac_address:
+        type: str
+        default: ""
         description: >-
-          Kernel parameters set on the sidecar container (Docker `sysctls`).
-          The sidecar owns the network namespace, so network sysctls for every
-          container sharing it must be set here; Docker rejects `sysctls` on a
-          container using network_mode container:. Example:
-          net.ipv4.ip_unprivileged_port_start "0" lets a rootless app in the
-          shared netns bind privileged ports.
+          Fixed MAC address for the sidecar's primary network endpoint
+          (tailscale_network_name). Empty (default) lets Docker assign one. On
+          Docker Engine < 25 this container-level MAC is the only way to pin a
+          MAC and applies only to the primary network, so to give a macvlan
+          endpoint a stable identity (e.g. for a DHCP-server reservation), make
+          the macvlan network tailscale_network_name and put the bridge in
+          tailscale_extra_networks. Use a locally administered address.
 
       tailscale_socket_host_dir:
         type: str

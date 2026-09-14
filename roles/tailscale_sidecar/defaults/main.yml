@@ -18,13 +18,15 @@ tailscale_extra_args: ""
 #     ipv4_address: 192.0.2.10
 tailscale_extra_networks: []
 
-# Kernel parameters set on the sidecar container (Docker `sysctls`). The
-# sidecar owns the network namespace, so network sysctls for every container
-# sharing it (network_mode: container:) must be set HERE — Docker rejects
-# `sysctls` on a container that joins another container's netns. Example: let a
-# rootless app in the shared netns bind :22 / :443:
-#   net.ipv4.ip_unprivileged_port_start: "0"
-tailscale_sysctls: {}
+# Fixed MAC address for the sidecar's PRIMARY network endpoint, i.e.
+# tailscale_network_name ("" = Docker assigns one). The role detects the
+# engine: Docker Engine >= 25 gets it per network endpoint; older engines only
+# support the container-wide MAC, which applies to the primary network. To give
+# a macvlan endpoint a stable identity (e.g. for a DHCP-server reservation),
+# make the macvlan network tailscale_network_name and move the bridge into
+# tailscale_extra_networks. Use a locally administered address (second hex
+# digit 2, 6, a or e).
+tailscale_mac_address: ""
 
 # Host directory to expose tailscaled's LocalAPI socket in. When non-empty the
 # directory is bind-mounted at /var/run/tailscale and TS_SOCKET points at
