@@ -170,9 +170,16 @@
   register: ts_status
   # rc guard: a failed exec or empty stdout must not crash from_json. Jinja
   # `and` short-circuits, so BackendState is only parsed once rc == 0.
+  # Wait for the SAME condition the assert below demands: Running AND online.
+  # After a container recreate, BackendState reaches Running from persisted
+  # state a few seconds before the control plane marks the node online. A loop
+  # that stopped at Running handed the assert a healthy sidecar that was not
+  # online yet, and the deploy failed (ansible-collection-infra#18).
+  # NeedsLogin is NOT an early exit: a first login passes through it.
   until: >-
     ts_status.rc is defined and ts_status.rc == 0 and
-    (ts_status.stdout | from_json).BackendState == "Running"
+    (ts_status.stdout | from_json).BackendState | default('') == "Running" and
+    ((ts_status.stdout | from_json).Self.Online | default(false) | bool)
   retries: 30
   delay: 2
   changed_when: false
