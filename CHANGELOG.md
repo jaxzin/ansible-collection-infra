@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/jaxzin/ansible-collection-infra/compare/1.7.0...1.7.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **tailscale_sidecar:** wait for Self.Online before asserting it ([#19](https://github.com/jaxzin/ansible-collection-infra/issues/19)) ([1b1b08f](https://github.com/jaxzin/ansible-collection-infra/commit/1b1b08ff69b520e11393561e6a9e596db5fd6556)), closes [#18](https://github.com/jaxzin/ansible-collection-infra/issues/18)
+
 # [1.7.0](https://github.com/jaxzin/ansible-collection-infra/compare/1.6.1...1.7.0) (2026-09-14)
 
 
