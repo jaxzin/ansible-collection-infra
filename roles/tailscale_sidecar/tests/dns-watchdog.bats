@@ -22,16 +22,24 @@ setup() {
 echo "$*" >> "$TS_LOG"
 [ "${TS_STUB_DOWN:-0}" = "1" ] && exit 1
 case "$*" in
-  *"--accept-dns=true"*) [ "${TS_STUB_NOFIX:-0}" = "1" ] || : > "$MARKER" ;;
+  *"--accept-dns=true"*)
+    [ "${TS_STUB_NOFIX:-0}" = "1" ] || : > "$MARKER"
+    # Like real tailscaled: re-applying OS DNS config rewrites resolv.conf
+    # with only MagicDNS, dropping Docker's 127.0.0.11 (this repo #20).
+    printf 'nameserver 100.100.100.100\n' > "$RESOLV_CONF" ;;
 esac
 exit 0
 STUB
 
     # `nslookup` stub: succeeds iff NSLOOKUP_FORCE_OK=1 or MARKER exists
-    # (i.e. a prior bounce repaired the forwarder).
+    # (i.e. a prior bounce repaired the forwarder). On failure it prints
+    # busybox's SERVFAIL line, unless NSLOOKUP_FAIL_MODE=timeout, which
+    # mimics `timeout 2 nslookup` killing a slow query: no output, exit 124.
     cat > "${STUBS}/nslookup" <<'STUB'
 #!/bin/sh
 { [ "${NSLOOKUP_FORCE_OK:-0}" = "1" ] || [ -f "$MARKER" ]; } && exit 0
+[ "${NSLOOKUP_FAIL_MODE:-servfail}" = "timeout" ] && exit 124
+echo "** server can't find $1: SERVFAIL"
 exit 1
 STUB
 
@@ -43,7 +51,12 @@ STUB
     export TS_DNS_BOUNCE_SETTLE=0
     export TS_DNS_PROBE_NAME="probe.test"
     export TS_DNS_PROBE_RESOLVER="100.100.100.100"
+    export TS_DNS_STATE_FILE="${TMP}/servfail-seen"
 }
+
+# One healthcheck tick. The bounce needs SERVFAIL on two consecutive ticks
+# (#20), so the broken-upstream tests call this twice.
+tick() { run sh "$SCRIPT"; }
 
 teardown() {
     rm -rf "$TMP"
@@ -78,7 +91,8 @@ teardown() {
     printf 'nameserver 127.0.0.11\n' > "$RESOLV"
     export TS_DNS_ACCEPT_DNS=true
     export NSLOOKUP_FORCE_OK=0   # only the bounce-created MARKER can fix it
-    run sh "$SCRIPT"
+    tick; [ "$status" -eq 0 ]; [ ! -f "$TS_LOG" ]   # first SERVFAIL only arms
+    tick
     [ "$status" -eq 0 ]
     grep -q -- '--accept-dns=false' "$TS_LOG"
     grep -q -- '--accept-dns=true' "$TS_LOG"
@@ -97,7 +111,7 @@ teardown() {
     export TS_DNS_ACCEPT_DNS=true
     export NSLOOKUP_FORCE_OK=0
     export TS_STUB_NOFIX=1   # bounce does not repair
-    run sh "$SCRIPT"
+    tick; tick
     [ "$status" -eq 0 ]
     grep -q -- '--accept-dns=false' "$TS_LOG"
     grep -q -- '--accept-dns=true' "$TS_LOG"
@@ -110,7 +124,7 @@ teardown() {
     export NSLOOKUP_FORCE_OK=0
     export TS_STUB_NOFIX=1
     export TS_STUB_DOWN=1    # tailscaled localapi gone: restart CAN cure this
-    run sh "$SCRIPT"
+    tick; tick
     [ "$status" -eq 1 ]
 }
 
@@ -122,4 +136,51 @@ teardown() {
     [ "$status" -eq 0 ]
     [ ! -f "$TS_LOG" ]
     head -n1 "$RESOLV" | grep -qx 'nameserver 127.0.0.11'
+}
+
+# This repo #20 (jaxzin-infra-bootstrap#385): on `--accept-dns=true` tailscaled
+# rewrites resolv.conf with only MagicDNS. The heal used to run only at the
+# start of the NEXT tick, so every bounce left netns consumers without
+# 127.0.0.11 for up to one interval; Gitea resolved `gitea-db` against
+# MagicDNS, got NXDOMAIN, and 500'd every DB-backed request for ~15 s.
+@test "bounce: 127.0.0.11 is first in resolv.conf immediately after the bounce" {
+    printf 'nameserver 127.0.0.11\nnameserver 100.100.100.100\n' > "$RESOLV"
+    export TS_DNS_ACCEPT_DNS=true
+    export NSLOOKUP_FORCE_OK=0
+    tick; [ -f "$TS_LOG" ] || tick     # stop on the tick that bounced
+    [ "$status" -eq 0 ]
+    grep -q -- '--accept-dns=true' "$TS_LOG"
+    head -n1 "$RESOLV" | grep -qx 'nameserver 127.0.0.11'
+    [ "$(grep -c '^nameserver 127.0.0.11$' "$RESOLV")" -eq 1 ]
+}
+
+# A probe timeout is upstream slowness, not the #7 empty-DefaultResolvers
+# fault. A bounce cannot fix it and (above) costs consumers a DNS blackout,
+# so it must not fire. The 2026-10-06 bounces fired during host latency with
+# a populated resolver list.
+@test "probe: timeout (no SERVFAIL) never bounces, exit 0" {
+    printf 'nameserver 127.0.0.11\n' > "$RESOLV"
+    export TS_DNS_ACCEPT_DNS=true
+    export NSLOOKUP_FORCE_OK=0
+    export NSLOOKUP_FAIL_MODE=timeout
+    tick; tick; tick
+    [ "$status" -eq 0 ]
+    [ ! -f "$TS_LOG" ]
+    [ ! -f "$TS_DNS_STATE_FILE" ]
+}
+
+@test "probe: a single SERVFAIL arms but does not bounce; recovery disarms" {
+    printf 'nameserver 127.0.0.11\n' > "$RESOLV"
+    export TS_DNS_ACCEPT_DNS=true
+    export NSLOOKUP_FORCE_OK=0
+    tick
+    [ "$status" -eq 0 ]
+    [ ! -f "$TS_LOG" ]
+    [ -f "$TS_DNS_STATE_FILE" ]
+    echo "$output" | grep -q 'first SERVFAIL'
+    export NSLOOKUP_FORCE_OK=1
+    tick
+    [ "$status" -eq 0 ]
+    [ ! -f "$TS_LOG" ]
+    [ ! -f "$TS_DNS_STATE_FILE" ]
 }
