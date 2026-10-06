@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.3](https://github.com/jaxzin/ansible-collection-infra/compare/1.7.2...1.7.3) (2026-10-06)
+
+
+### Bug Fixes
+
+* **tailscale_sidecar:** bind-mount the watchdog directory, not the script file ([#23](https://github.com/jaxzin/ansible-collection-infra/issues/23)) ([9c6fa85](https://github.com/jaxzin/ansible-collection-infra/commit/9c6fa8577ca77cb9b29a82ba67747a476f449227))
+* **tailscale_sidecar:** keep the mount rationale as a YAML comment, not inside the Jinja expression ([6b1820f](https://github.com/jaxzin/ansible-collection-infra/commit/6b1820ff3fb6f6abe46227ef3c75eb98b9785662))
+
 ## [1.7.2](https://github.com/jaxzin/ansible-collection-infra/compare/1.7.1...1.7.2) (2026-10-06)
 
 
