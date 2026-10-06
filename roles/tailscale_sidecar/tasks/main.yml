@@ -67,7 +67,7 @@
     healthcheck: >-
       {{
         {
-          'test': ['CMD', '/bin/sh', '/usr/local/bin/dns-watchdog.sh'],
+          'test': ['CMD', '/bin/sh', '/opt/dns-watchdog/dns-watchdog.sh'],
           'interval': tailscale_dns_watchdog_interval,
           'timeout': tailscale_dns_watchdog_timeout,
           'retries': tailscale_dns_watchdog_retries,
@@ -154,7 +154,10 @@
             if tailscale_serve_enabled else []
           )
         + (
-            [tailscale_dns_watchdog_host_dir ~ '/dns-watchdog.sh:/usr/local/bin/dns-watchdog.sh:ro']
+            # The DIRECTORY, never the script file: `copy` replaces the file by
+            # rename (new inode) and a single-file bind would pin the old one,
+            # so a running sidecar would keep executing the stale script (#23).
+            [tailscale_dns_watchdog_host_dir ~ ':/opt/dns-watchdog:ro']
             if tailscale_dns_watchdog_enabled else []
           )
         + (
