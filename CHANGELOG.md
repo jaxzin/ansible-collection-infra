@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/jaxzin/ansible-collection-infra/compare/1.7.1...1.7.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* **tailscale_sidecar:** heal resolv.conf right after the accept-dns bounce; bounce only on repeated SERVFAIL ([#20](https://github.com/jaxzin/ansible-collection-infra/issues/20)) ([86fa915](https://github.com/jaxzin/ansible-collection-infra/commit/86fa91583e72b20cf5673dc1904cde4e6bbd0bd3)), closes [jaxzin/jaxzin-infra-bootstrap#385](https://github.com/jaxzin/jaxzin-infra-bootstrap/issues/385) [#7](https://github.com/jaxzin/ansible-collection-infra/issues/7)
+
 ## [1.7.1](https://github.com/jaxzin/ansible-collection-infra/compare/1.7.0...1.7.1) (2026-10-05)
 
 
