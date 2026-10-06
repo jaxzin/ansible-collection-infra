@@ -69,9 +69,16 @@ on each interval:
    to `/etc/resolv.conf` so containers sharing this netns keep resolving Docker
    service names (tailscaled strips it on every restart).
 2. **Upstream watchdog** — when `tailscale_accept_dns` is `true`, probes an
-   external name against MagicDNS; if it SERVFAILs, it bounces
-   `accept-dns` false→true to force tailscaled to re-apply its DNS config
-   (verified non-disruptive). After the bounce it re-probes. If the probe
+   external name against MagicDNS; if it **SERVFAILs on two consecutive
+   intervals**, it bounces `accept-dns` false→true to force tailscaled to
+   re-apply its DNS config. A probe timeout or any non-SERVFAIL failure is
+   treated as upstream slowness/outage and never bounces. The bounce is not
+   free for netns consumers: each `tailscale set` makes tailscaled rewrite
+   `resolv.conf` without `127.0.0.11`, so the script re-runs the downstream
+   heal immediately after each one instead of waiting for the next interval
+   ([issue #20](https://github.com/jaxzin/ansible-collection-infra/issues/20):
+   before this, every bounce cost consumers ~15 s of Docker-name resolution).
+   After the bounce it re-probes. If the probe
    still fails, the exit code distinguishes what a restart could fix (#12):
    `unhealthy` **only** when tailscaled itself is unresponsive (a restart
    plausibly cures that); if tailscaled is up, the failure is an upstream
