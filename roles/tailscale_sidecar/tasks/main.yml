@@ -142,6 +142,10 @@
       }}
     # /dev/net/tun is bind-mounted only in kernel mode (see capabilities above);
     # userspace mode never opens the device.
+    # The watchdog mount is the DIRECTORY, never the script file: `copy`
+    # replaces the file by rename (new inode) and a single-file bind would pin
+    # the old one, so a running sidecar would keep executing the stale script
+    # (#23).
     volumes: >-
       {{
         [tailscale_state_dir ~ ':/var/lib/tailscale']
@@ -154,9 +158,6 @@
             if tailscale_serve_enabled else []
           )
         + (
-            # The DIRECTORY, never the script file: `copy` replaces the file by
-            # rename (new inode) and a single-file bind would pin the old one,
-            # so a running sidecar would keep executing the stale script (#23).
             [tailscale_dns_watchdog_host_dir ~ ':/opt/dns-watchdog:ro']
             if tailscale_dns_watchdog_enabled else []
           )
